@@ -22,6 +22,7 @@ import com.tungsten.hmclpe.R;
 import com.tungsten.hmclpe.auth.authlibinjector.AuthlibInjectorServer;
 import com.tungsten.hmclpe.launcher.MainActivity;
 import com.tungsten.hmclpe.launcher.launch.boat.BoatMinecraftActivity;
+import com.tungsten.hmclpe.launcher.launch.boat.VirGLService;
 import com.tungsten.hmclpe.launcher.launch.pojav.PojavMinecraftActivity;
 import com.tungsten.hmclpe.launcher.list.local.game.GameListBean;
 import com.tungsten.hmclpe.launcher.manifest.AppManifest;
@@ -209,6 +210,10 @@ public class MainUI extends BaseUI implements View.OnClickListener, AdapterView.
             Intent intent;
             if (activity.privateGameSetting.boatLauncherSetting.enable){
                 intent = new Intent(context, BoatMinecraftActivity.class);
+                if (activity.privateGameSetting.boatLauncherSetting.renderer.equals("VirGL")) {
+                    Intent virGLService = new Intent(context, VirGLService.class);
+                    context.startService(virGLService);
+                }
             }
             else {
                 intent = new Intent(context, PojavMinecraftActivity.class);

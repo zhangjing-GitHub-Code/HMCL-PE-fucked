@@ -93,6 +93,11 @@
             android:name="net.kdt.pojavlaunch.ExitActivity"
             android:configChanges="keyboardHidden|orientation|screenSize|keyboard|navigation"/>
         <service
+            android:name=".launcher.launch.boat.VirGLService"
+            android:process=":virGLProcess"
+            android:enabled="true"
+            android:exported="true" />
+        <service
             android:name=".launcher.download.optifine.InstallOptifineService"
             android:process=":installOptifineService"
             android:enabled="true"
