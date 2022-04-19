@@ -1,5 +1,5 @@
 # HMCL-PE
-  [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fzhangjing-GitHub-Code%2FHMCL-PE%2Fbadge%3Fref%3Dmaster&style=popout)](https://actions-badge.atrox.dev/zhangjing-GitHub-Code/HMCL-PE/goto?ref=main)  
+  [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2Fzhangjing-GitHub-Code%2FHMCL-PE%2Fbadge%3Fref%3Dmaster&style=popout)](https://actions-badge.atrox.dev/zhangjing-GitHub-Code/HMCL-PE/goto?ref=master)  
  这是一个利用 **⇡** `github actions`来帮助原作者编译的仓库   
  上游更新且我有时间时我会用`fetch and merge`来更新，actions会自动编译 ~(当然，签名是我的jks)(不知道作者会不会淦死我)~
    
