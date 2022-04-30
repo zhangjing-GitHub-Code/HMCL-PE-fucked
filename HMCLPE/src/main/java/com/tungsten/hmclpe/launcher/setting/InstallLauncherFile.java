@@ -1,5 +1,6 @@
 package com.tungsten.hmclpe.launcher.setting;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -32,8 +33,9 @@ public class InstallLauncherFile {
         /*
          *初始化进度监听回调
          */
-        AssetsUtils.ProgressCallback progressCallback = progress -> activity.runOnUiThread(() -> {
+        @SuppressLint("SetTextI18n") AssetsUtils.ProgressCallback progressCallback = progress -> activity.runOnUiThread(() -> {
             activity.loadingProgress.setProgress(progress);
+            activity.loadingProgressText.setText(progress + " %");
         });
         /*
          *检查forge-install-bootstrapper.jar
@@ -78,9 +80,11 @@ public class InstallLauncherFile {
         checkJava17(activity);
     }
 
+    @SuppressLint("SetTextI18n")
     public static void checkJava8(SplashActivity activity){
         AssetsUtils.ProgressCallback progressCallback = progress -> activity.runOnUiThread(() -> {
             activity.loadingProgress.setProgress(progress);
+            activity.loadingProgressText.setText(progress + " %");
         });
         activity.runOnUiThread(() -> {
             activity.loadingText.setText(activity.getString(R.string.loading_hint_java_8));
@@ -101,6 +105,7 @@ public class InstallLauncherFile {
              */
             activity.runOnUiThread(() -> {
                 activity.loadingProgress.setProgress(0);
+                activity.loadingProgressText.setText("0 %");
                 activity.loadingText.setText(activity.getString(R.string.loading_hint_java_17_select));
                 activity.selectText.setVisibility(View.VISIBLE);
                 activity.download.setVisibility(View.VISIBLE);
@@ -156,13 +161,16 @@ public class InstallLauncherFile {
         DownloadUtil.downloadSingleFile(activity, new DownloadTaskListBean("", url, AppManifest.DEFAULT_CACHE_DIR + "/java/JRE17.zip",AppInfo.JAVA_17_SHA1), new DownloadTask.Feedback() {
             @Override
             public void addTask(DownloadTaskListBean bean) {
-
+                System.out.println(bean.url);
+                System.out.println(bean.path);
             }
 
+            @SuppressLint("SetTextI18n")
             @Override
             public void updateProgress(DownloadTaskListBean bean) {
                 activity.runOnUiThread(() -> {
                     activity.loadingProgress.setProgress(bean.progress);
+                    activity.loadingProgressText.setText(bean.progress + " %");
                 });
             }
 
@@ -182,6 +190,7 @@ public class InstallLauncherFile {
                     if (url.equals(AppInfo.JAVA_17_DOWNLOAD_URL_GITHUB)) {
                         activity.runOnUiThread(() -> {
                             activity.loadingProgress.setProgress(0);
+                            activity.loadingProgressText.setText("0 %");
                             activity.loadingText.setText(activity.getString(R.string.loading_hint_java_17_select));
                             activity.selectText.setVisibility(View.VISIBLE);
                             activity.download.setVisibility(View.VISIBLE);
@@ -192,12 +201,14 @@ public class InstallLauncherFile {
                     else if (url.equals(AppInfo.JAVA_17_DOWNLOAD_URL_FASTGIT)) {
                         activity.runOnUiThread(() -> {
                             activity.loadingProgress.setProgress(0);
+                            activity.loadingProgressText.setText("0 %");
                             downloadJava17(activity,AppInfo.JAVA_17_DOWNLOAD_URL_GITHUB);
                         });
                     }
                     else {
                         activity.runOnUiThread(() -> {
                             activity.loadingProgress.setProgress(0);
+                            activity.loadingProgressText.setText("0 %");
                             downloadJava17(activity,AppInfo.JAVA_17_DOWNLOAD_URL_FASTGIT);
                         });
                     }
@@ -205,6 +216,7 @@ public class InstallLauncherFile {
                 else {
                     activity.runOnUiThread(() -> {
                         activity.loadingProgress.setProgress(0);
+                        activity.loadingProgressText.setText("0 %");
                         unZipJava(activity,AppManifest.DEFAULT_CACHE_DIR + "/java/JRE17.zip");
                     });
                 }
@@ -230,6 +242,7 @@ public class InstallLauncherFile {
         else {
             activity.runOnUiThread(() -> {
                 activity.loadingProgress.setProgress(0);
+                activity.loadingProgressText.setText("0 %");
                 activity.loadingText.setText(activity.getString(R.string.loading_hint_java_17_select));
                 activity.selectText.setVisibility(View.VISIBLE);
                 activity.download.setVisibility(View.VISIBLE);
@@ -247,9 +260,11 @@ public class InstallLauncherFile {
 
             }
 
+            @SuppressLint("SetTextI18n")
             @Override
             public void onProgress(int percentDone) {
                 activity.loadingProgress.setProgress(percentDone);
+                activity.loadingProgressText.setText(percentDone + " %");
             }
 
             @Override
@@ -268,10 +283,12 @@ public class InstallLauncherFile {
         });
     }
 
+    @SuppressLint("SetTextI18n")
     public static void enterLauncher (SplashActivity activity) {
         Handler handler = new Handler();
         activity.loadingText.setText(activity.getString(R.string.loading_hint_ready));
         activity.loadingProgress.setProgress(100);
+        activity.loadingProgressText.setText("100 %");
         Intent intent = new Intent(activity,MainActivity.class);
         Bundle bundle = new Bundle();
         bundle.putBoolean("fullscreen",activity.launcherSetting.fullscreen);
