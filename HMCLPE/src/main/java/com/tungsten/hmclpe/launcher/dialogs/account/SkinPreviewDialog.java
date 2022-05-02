@@ -13,6 +13,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -26,6 +27,7 @@ import com.tungsten.filepicker.FileChooser;
 import com.tungsten.hmclpe.R;
 import com.tungsten.hmclpe.auth.Account;
 import com.tungsten.hmclpe.auth.offline.OfflineSkinSetting;
+import com.tungsten.hmclpe.auth.offline.SkinJson;
 import com.tungsten.hmclpe.launcher.MainActivity;
 import com.tungsten.hmclpe.skin.GameCharacter;
 import com.tungsten.hmclpe.skin.MinecraftSkinRenderer;
@@ -34,8 +36,16 @@ import com.tungsten.hmclpe.skin.utils.Avatar;
 import com.tungsten.hmclpe.skin.utils.InvalidSkinException;
 import com.tungsten.hmclpe.skin.utils.NormalizedSkin;
 import com.tungsten.hmclpe.utils.file.UriUtils;
+import com.tungsten.hmclpe.utils.gson.JsonUtils;
+import com.tungsten.hmclpe.utils.io.NetworkUtils;
+import com.tungsten.hmclpe.utils.string.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class SkinPreviewDialog implements View.OnClickListener {
 
@@ -48,6 +58,7 @@ public class SkinPreviewDialog implements View.OnClickListener {
     private Context context;
     private MainActivity activity;
     private Account account;
+    private OfflineSkinCallback callback;
 
     private LinearLayout skinParentView;
 
@@ -85,20 +96,30 @@ public class SkinPreviewDialog implements View.OnClickListener {
     private ImageButton selectSkin;
     private ImageButton selectCape;
 
+    private LinearLayout littleSkinLayout;
+
+    private LinearLayout blessingSkinLayout;
+    private EditText editServer;
+
     private TextView littleSkinUrl;
 
     private OfflineSkinSetting offlineSkinSetting;
 
     private static SkinPreviewDialog skinPreviewDialog;
 
-    public SkinPreviewDialog(Context context, MainActivity activity, Account account){
+    public SkinPreviewDialog(Context context, MainActivity activity, Account account,OfflineSkinCallback callback){
         this.context = context;
         this.activity = activity;
         this.account = account;
+        this.callback = callback;
         handler = new Handler();
         renderer = new MinecraftSkinRenderer(context,R.drawable.skin_alex,true);
         skinPreviewDialog = this;
         init();
+    }
+
+    public interface OfflineSkinCallback{
+        void onPositive(OfflineSkinSetting offlineSkinSetting);
     }
 
     public static SkinPreviewDialog getInstance () {
@@ -171,6 +192,11 @@ public class SkinPreviewDialog implements View.OnClickListener {
         editCapePath = activity.findViewById(R.id.edit_cape_path);
         selectCape = activity.findViewById(R.id.select_cape);
 
+        littleSkinLayout = activity.findViewById(R.id.little_skin_layout);
+
+        blessingSkinLayout = activity.findViewById(R.id.blessing_skin_layout);
+        editServer = activity.findViewById(R.id.edit_blessing_server);
+
         editSkinPath.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -186,18 +212,24 @@ public class SkinPreviewDialog implements View.OnClickListener {
             public void afterTextChanged(Editable editable) {
                 if (offlineSkinSetting.type == 3) {
                     offlineSkinSetting.skinPath = editSkinPath.getText().toString();
-                    Bitmap bitmap;
+                    Bitmap skin;
+                    Bitmap cape;
                     if (new File(offlineSkinSetting.skinPath).exists()) {
-                        bitmap = BitmapFactory.decodeFile(offlineSkinSetting.skinPath);
+                        skin = BitmapFactory.decodeFile(offlineSkinSetting.skinPath).getWidth() == 64 && (BitmapFactory.decodeFile(offlineSkinSetting.skinPath).getHeight() == 32 || BitmapFactory.decodeFile(offlineSkinSetting.skinPath).getHeight() == 64) ? BitmapFactory.decodeFile(offlineSkinSetting.skinPath) : Avatar.getBitmapFromRes(context,R.drawable.skin_alex);
                     }
                     else {
-                        bitmap = Avatar.getBitmapFromRes(context,R.drawable.skin_alex);
+                        skin = Avatar.getBitmapFromRes(context,R.drawable.skin_alex);
+                    }
+                    if (new File(offlineSkinSetting.capePath).exists()) {
+                        cape = (BitmapFactory.decodeFile(offlineSkinSetting.capePath).getWidth() == 64 && BitmapFactory.decodeFile(offlineSkinSetting.capePath).getHeight() == 32) ? BitmapFactory.decodeFile(offlineSkinSetting.capePath) : null;
+                    }
+                    else {
+                        cape = null;
                     }
                     try {
-                        NormalizedSkin normalizedSkin = new NormalizedSkin(bitmap);
+                        NormalizedSkin normalizedSkin = new NormalizedSkin(skin);
                         renderer.mCharacter = new GameCharacter(normalizedSkin.isSlim());
-                        renderer.updateTexture(normalizedSkin.isOldFormat() ? normalizedSkin.getNormalizedTexture() : normalizedSkin.getOriginalTexture());
-                        offlineSkinSetting.skin = Avatar.bitmapToString(normalizedSkin.isOldFormat() ? normalizedSkin.getNormalizedTexture() : normalizedSkin.getOriginalTexture());
+                        renderer.updateTexture(normalizedSkin.isOldFormat() ? normalizedSkin.getNormalizedTexture() : normalizedSkin.getOriginalTexture(),cape);
                     } catch (InvalidSkinException e) {
                         e.printStackTrace();
                     }
@@ -219,19 +251,110 @@ public class SkinPreviewDialog implements View.OnClickListener {
             public void afterTextChanged(Editable editable) {
                 if (offlineSkinSetting.type == 3) {
                     offlineSkinSetting.capePath = editCapePath.getText().toString();
-                    Bitmap bitmap;
+                    Bitmap skin;
+                    Bitmap cape;
                     if (new File(offlineSkinSetting.skinPath).exists()) {
-                        bitmap = BitmapFactory.decodeFile(offlineSkinSetting.skinPath);
+                        skin = BitmapFactory.decodeFile(offlineSkinSetting.skinPath).getWidth() == 64 && (BitmapFactory.decodeFile(offlineSkinSetting.skinPath).getHeight() == 32 || BitmapFactory.decodeFile(offlineSkinSetting.skinPath).getHeight() == 64) ? BitmapFactory.decodeFile(offlineSkinSetting.skinPath) : Avatar.getBitmapFromRes(context,R.drawable.skin_alex);
                     }
                     else {
-                        bitmap = Avatar.getBitmapFromRes(context,R.drawable.skin_alex);
+                        skin = Avatar.getBitmapFromRes(context,R.drawable.skin_alex);
                     }
-
+                    if (new File(offlineSkinSetting.capePath).exists()) {
+                        cape = (BitmapFactory.decodeFile(offlineSkinSetting.capePath).getWidth() == 64 && BitmapFactory.decodeFile(offlineSkinSetting.capePath).getHeight() == 32) ? BitmapFactory.decodeFile(offlineSkinSetting.capePath) : null;
+                    }
+                    else {
+                        cape = null;
+                    }
+                    try {
+                        NormalizedSkin normalizedSkin = new NormalizedSkin(skin);
+                        renderer.mCharacter = new GameCharacter(normalizedSkin.isSlim());
+                        renderer.updateTexture(normalizedSkin.isOldFormat() ? normalizedSkin.getNormalizedTexture() : normalizedSkin.getOriginalTexture(),cape);
+                    } catch (InvalidSkinException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         });
         selectSkin.setOnClickListener(this);
         selectCape.setOnClickListener(this);
+
+        editServer.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                offlineSkinSetting.server = editServer.getText().toString();
+                String cslApi;
+                if (offlineSkinSetting.server.startsWith("http://")) {
+                    cslApi = offlineSkinSetting.server.replace("http://","https://");
+                }
+                else {
+                    cslApi = offlineSkinSetting.server;
+                }
+                URL u = null;
+                try {
+                    u = new URL(StringUtils.removeSuffix(cslApi, "/") + "/" + account.auth_player_name + ".json");
+                    Log.e("cslApi",StringUtils.removeSuffix(cslApi, "/") + "/" + account.auth_player_name + ".json");
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                if (u != null) {
+                    new Thread(() -> {
+                        try {
+                            String resultText = NetworkUtils.doGet(NetworkUtils.toURL(StringUtils.removeSuffix(cslApi, "/") + "/" + account.auth_player_name + ".json"));
+                            SkinJson result = JsonUtils.GSON.fromJson(resultText, SkinJson.class);
+                            Bitmap skin;
+                            Bitmap cape;
+                            if (result.hasSkin()) {
+                                if (result.getHash() == null) {
+                                    skin = Avatar.getBitmapFromRes(context,R.drawable.skin_alex);
+                                }
+                                else {
+                                    URL url = new URL(StringUtils.removeSuffix(cslApi, "/") + "/textures/" + result.getHash());
+                                    HttpURLConnection httpURLConnection = (HttpURLConnection)url.openConnection();
+                                    httpURLConnection.setDoInput(true);
+                                    httpURLConnection.connect();
+                                    InputStream inputStream = httpURLConnection.getInputStream();
+                                    skin = BitmapFactory.decodeStream(inputStream);
+                                }
+                                if (result.getCapeHash() == null) {
+                                    cape = null;
+                                }
+                                else {
+                                    URL url = new URL(StringUtils.removeSuffix(cslApi, "/") + "/textures/" + result.getCapeHash());
+                                    HttpURLConnection httpURLConnection = (HttpURLConnection)url.openConnection();
+                                    httpURLConnection.setDoInput(true);
+                                    httpURLConnection.connect();
+                                    InputStream inputStream = httpURLConnection.getInputStream();
+                                    cape = BitmapFactory.decodeStream(inputStream);
+                                }
+                                activity.runOnUiThread(() -> {
+                                    if (offlineSkinSetting.type == 5) {
+                                        try {
+                                            NormalizedSkin normalizedSkin = new NormalizedSkin(skin);
+                                            renderer.mCharacter = new GameCharacter(normalizedSkin.isSlim());
+                                            renderer.updateTexture(normalizedSkin.isOldFormat() ? normalizedSkin.getNormalizedTexture() : normalizedSkin.getOriginalTexture(),cape);
+                                        } catch (InvalidSkinException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                });
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
+                }
+            }
+        });
 
         if (account.offlineSkinSetting == null) {
             offlineSkinSetting = new OfflineSkinSetting(context);
@@ -244,7 +367,7 @@ public class SkinPreviewDialog implements View.OnClickListener {
             }
         }
 
-        renderer.updateTexture(Avatar.stringToBitmap(account.texture));
+        renderer.updateTexture(Avatar.stringToBitmap(account.texture),null);
 
         switch (offlineSkinSetting.type) {
             case 0:
@@ -274,7 +397,8 @@ public class SkinPreviewDialog implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         if (v == positive){
-
+            callback.onPositive(offlineSkinSetting);
+            dismiss();
         }
         if (v == negative){
             dismiss();
@@ -327,9 +451,11 @@ public class SkinPreviewDialog implements View.OnClickListener {
         blessingSkin.setChecked(false);
 
         localSkinLayout.setVisibility(View.GONE);
+        littleSkinLayout.setVisibility(View.GONE);
+        blessingSkinLayout.setVisibility(View.GONE);
 
         renderer.mCharacter = new GameCharacter(true);
-        renderer.updateTexture(Avatar.getBitmapFromRes(context,R.drawable.skin_alex));
+        renderer.updateTexture(Avatar.getBitmapFromRes(context,R.drawable.skin_alex),null);
         offlineSkinSetting.type = 0;
     }
 
@@ -342,9 +468,11 @@ public class SkinPreviewDialog implements View.OnClickListener {
         blessingSkin.setChecked(false);
 
         localSkinLayout.setVisibility(View.GONE);
+        littleSkinLayout.setVisibility(View.GONE);
+        blessingSkinLayout.setVisibility(View.GONE);
 
         renderer.mCharacter = new GameCharacter(false);
-        renderer.updateTexture(Avatar.getBitmapFromRes(context,R.drawable.skin_steve));
+        renderer.updateTexture(Avatar.getBitmapFromRes(context,R.drawable.skin_steve),null);
         offlineSkinSetting.type = 1;
     }
 
@@ -357,9 +485,11 @@ public class SkinPreviewDialog implements View.OnClickListener {
         blessingSkin.setChecked(false);
 
         localSkinLayout.setVisibility(View.GONE);
+        littleSkinLayout.setVisibility(View.GONE);
+        blessingSkinLayout.setVisibility(View.GONE);
 
         renderer.mCharacter = new GameCharacter(true);
-        renderer.updateTexture(Avatar.getBitmapFromRes(context,R.drawable.skin_alex));
+        renderer.updateTexture(Avatar.getBitmapFromRes(context,R.drawable.skin_alex),null);
         offlineSkinSetting.type = 2;
     }
 
@@ -372,26 +502,13 @@ public class SkinPreviewDialog implements View.OnClickListener {
         blessingSkin.setChecked(false);
 
         localSkinLayout.setVisibility(View.VISIBLE);
+        littleSkinLayout.setVisibility(View.GONE);
+        blessingSkinLayout.setVisibility(View.GONE);
+
+        offlineSkinSetting.type = 3;
 
         editSkinPath.setText(offlineSkinSetting.skinPath);
         editCapePath.setText(offlineSkinSetting.capePath);
-
-        Bitmap bitmap;
-        if (new File(offlineSkinSetting.skinPath).exists()) {
-            bitmap = BitmapFactory.decodeFile(offlineSkinSetting.skinPath);
-        }
-        else {
-            bitmap = Avatar.getBitmapFromRes(context,R.drawable.skin_alex);
-        }
-        try {
-            NormalizedSkin normalizedSkin = new NormalizedSkin(bitmap);
-            renderer.mCharacter = new GameCharacter(normalizedSkin.isSlim());
-            renderer.updateTexture(normalizedSkin.isOldFormat() ? normalizedSkin.getNormalizedTexture() : normalizedSkin.getOriginalTexture());
-            offlineSkinSetting.skin = Avatar.bitmapToString(normalizedSkin.isOldFormat() ? normalizedSkin.getNormalizedTexture() : normalizedSkin.getOriginalTexture());
-            offlineSkinSetting.type = 3;
-        } catch (InvalidSkinException e) {
-            e.printStackTrace();
-        }
     }
 
     private void switchToLittleSkin(){
@@ -403,6 +520,56 @@ public class SkinPreviewDialog implements View.OnClickListener {
         blessingSkin.setChecked(false);
 
         localSkinLayout.setVisibility(View.GONE);
+        littleSkinLayout.setVisibility(View.VISIBLE);
+        blessingSkinLayout.setVisibility(View.GONE);
+
+        offlineSkinSetting.type = 4;
+
+        new Thread(() -> {
+            try {
+                String resultText = NetworkUtils.doGet(NetworkUtils.toURL("https://mcskin.littleservice.cn/" + account.auth_player_name + ".json"));
+                SkinJson result = JsonUtils.GSON.fromJson(resultText, SkinJson.class);
+                Bitmap skin;
+                Bitmap cape;
+                if (result.hasSkin()) {
+                    if (result.getHash() == null) {
+                        skin = Avatar.getBitmapFromRes(context,R.drawable.skin_alex);
+                    }
+                    else {
+                        URL url = new URL("https://mcskin.littleservice.cn/textures/" + result.getHash());
+                        HttpURLConnection httpURLConnection = (HttpURLConnection)url.openConnection();
+                        httpURLConnection.setDoInput(true);
+                        httpURLConnection.connect();
+                        InputStream inputStream = httpURLConnection.getInputStream();
+                        skin = BitmapFactory.decodeStream(inputStream);
+                    }
+                    if (result.getCapeHash() == null) {
+                        cape = null;
+                    }
+                    else {
+                        URL url = new URL("https://mcskin.littleservice.cn/textures/" + result.getCapeHash());
+                        HttpURLConnection httpURLConnection = (HttpURLConnection)url.openConnection();
+                        httpURLConnection.setDoInput(true);
+                        httpURLConnection.connect();
+                        InputStream inputStream = httpURLConnection.getInputStream();
+                        cape = BitmapFactory.decodeStream(inputStream);
+                    }
+                    activity.runOnUiThread(() -> {
+                        if (offlineSkinSetting.type == 4) {
+                            try {
+                                NormalizedSkin normalizedSkin = new NormalizedSkin(skin);
+                                renderer.mCharacter = new GameCharacter(normalizedSkin.isSlim());
+                                renderer.updateTexture(normalizedSkin.isOldFormat() ? normalizedSkin.getNormalizedTexture() : normalizedSkin.getOriginalTexture(),cape);
+                            } catch (InvalidSkinException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     private void switchToBlessingSkin(){
@@ -414,6 +581,12 @@ public class SkinPreviewDialog implements View.OnClickListener {
         blessingSkin.setChecked(true);
 
         localSkinLayout.setVisibility(View.GONE);
+        littleSkinLayout.setVisibility(View.GONE);
+        blessingSkinLayout.setVisibility(View.VISIBLE);
+
+        offlineSkinSetting.type = 5;
+
+        editServer.setText(offlineSkinSetting.server);
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data){
