@@ -18,23 +18,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: set up JDK 11
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: fuck at JDK 11
       uses: actions/setup-java@v3
       with:
         java-version: '11'
         distribution: 'temurin'
         cache: gradle
 
-    - name: Grant execute permission for gradlew
+    - name: Fuck execute permission for gradlew
       run: chmod +x gradlew
-    - name: Build with Gradle
+    - name: Build♂with♂Gradle
       run: cd HMCLPE&&../gradlew build
     #step：上传apk 到action，在右上角查看
     # 官方文档 https://help.github.com/cn/actions/automating-your-workflow-with-github-actions/persisting-workflow-data-using-artifacts#uploading-build-and-test-artifactst
-    - name: Upload APK
+    - name: Fuck↑ APK to artifacts
       uses: actions/upload-artifact@v3
       with:
         name: HMCLPE-release-selfsigned.apk
         path: HMCLPE/build/outputs/apk/release/HMCLPE-release.apk
         asset_content_type: application/apk
+    - name: Upload APK to Pgyer
+      uses: JantHsueh/upload-file-action@master
+      with:
+        url: https://www.pgyer.com/apiv2/app/upload
+        method: POST
+        # ${{ secrets.pgyer_api_key }} 使用秘钥，如何设置下面会介绍
+        forms: '{"_api_key":"${{ secrets.pgyer_api_key }}","buildInstallType":1}'
+        fileForms: '{"file":"HMCLPE/build/outputs/apk/release/HMCLPE-release.apk"}'
