@@ -20,9 +20,9 @@ jobs:
     steps:
     - name: Fuck you bad packet header
       run: |
-        - git config --global pack.windowMemory "100m"
-        - git config --global pack.packSizeLimit "100m"
-        - git config --global pack.threads "1"
+        git config --global pack.windowMemory "100m"
+        git config --global pack.packSizeLimit "100m"
+        git config --global pack.threads "1"
     - name: Checkout
       uses: actions/checkout@v3
     - name: fuck at JDK 11
