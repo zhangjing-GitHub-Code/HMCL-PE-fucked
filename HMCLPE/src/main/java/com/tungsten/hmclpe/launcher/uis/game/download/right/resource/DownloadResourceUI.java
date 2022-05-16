@@ -1,20 +1,29 @@
 package com.tungsten.hmclpe.launcher.uis.game.download.right.resource;
 
+import static com.tungsten.hmclpe.utils.Lang.mapOf;
+import static com.tungsten.hmclpe.utils.Pair.pair;
+
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.tungsten.hmclpe.R;
 import com.tungsten.hmclpe.launcher.MainActivity;
+import com.tungsten.hmclpe.launcher.list.download.ModDependencyAdapter;
+import com.tungsten.hmclpe.launcher.list.download.ModGameVersionAdapter;
+import com.tungsten.hmclpe.launcher.mod.ModInfo;
 import com.tungsten.hmclpe.launcher.mod.ModListBean;
-import com.tungsten.hmclpe.launcher.uis.tools.BaseUI;
-import com.tungsten.hmclpe.utils.string.ModTranslations;
+import com.tungsten.hmclpe.utils.io.NetworkUtils;
+import com.tungsten.hmclpe.utils.string.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,8 +40,17 @@ public class DownloadResourceUI extends BaseDownloadUI implements View.OnClickLi
     private LinearLayout mcbbs;
     private LinearLayout curseForge;
 
-    public DownloadResourceUI(Context context, MainActivity activity, ModListBean.Mod bean) {
-        super(context, activity, bean);
+    private ProgressBar progressBar;
+    private TextView refreshText;
+    private LinearLayout dependencyLayout;
+    private ListView dependencyList;
+    private ListView versionList;
+
+    private ModGameVersionAdapter modGameVersionAdapter;
+    private ModDependencyAdapter modDependencyAdapter;
+
+    public DownloadResourceUI(Context context, MainActivity activity, ModListBean.Mod bean,boolean isMod) {
+        super(context, activity, bean, isMod);
     }
 
     @Override
@@ -51,6 +69,14 @@ public class DownloadResourceUI extends BaseDownloadUI implements View.OnClickLi
         mcbbs.setOnClickListener(this);
         curseForge.setOnClickListener(this);
 
+        progressBar = findViewById(R.id.mod_info_progress);
+        refreshText = findViewById(R.id.mod_load_fail_text);
+        dependencyLayout = findViewById(R.id.dependency_layout);
+        dependencyList = findViewById(R.id.dependency_list);
+        versionList = findViewById(R.id.mod_version_list);
+
+        refreshText.setOnClickListener(this);
+
         new Thread(() -> {
             try {
                 URL url = new URL(bean.getIconUrl());
@@ -66,10 +92,21 @@ public class DownloadResourceUI extends BaseDownloadUI implements View.OnClickLi
                 e.printStackTrace();
             }
         }).start();
-        name.setText(ModTranslations.getDisplayName(bean.getTitle(),bean.getSlug()));
+        name.setText(modTranslation != null && isMod ? modTranslation.getDisplayName() : bean.getTitle());
         description.setText(bean.getDescription());
 
+        mcmod.setVisibility(isMod ? View.VISIBLE : View.GONE);
+        mcbbs.setVisibility(modTranslation != null && StringUtils.isNotBlank(modTranslation.getMcbbs()) ? View.VISIBLE : View.GONE);
         curseForge.setVisibility(bean.getPageUrl() != null ? View.VISIBLE : View.GONE);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (isFirst) {
+            refresh();
+            isFirst = false;
+        }
     }
 
     @Override
@@ -80,16 +117,98 @@ public class DownloadResourceUI extends BaseDownloadUI implements View.OnClickLi
     @Override
     public void onClick(View view) {
         if (view == mcmod) {
-
+            Uri uri;
+            if (modTranslation == null || StringUtils.isBlank(modTranslation.getMcmod())) {
+                uri = Uri.parse(NetworkUtils.withQuery("https://search.mcmod.cn/s", mapOf(
+                        pair("key", bean.getSlug()),
+                        pair("site", "all"),
+                        pair("filter", "0")
+                )));
+            }
+            else {
+                uri = Uri.parse(getMcmodUrl(modTranslation.getMcmod()));
+            }
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            context.startActivity(intent);
         }
         if (view == mcbbs) {
-
+            Uri uri = Uri.parse(getMcbbsUrl(modTranslation.getMcbbs()));
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            context.startActivity(intent);
         }
         if (view == curseForge) {
             Uri uri = Uri.parse(bean.getPageUrl());
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             context.startActivity(intent);
         }
+        if (view == refreshText) {
+            refresh();
+        }
+    }
+
+    public void refresh() {
+        new Thread(() -> {
+            activity.runOnUiThread(() -> {
+                dependencyLayout.setVisibility(View.GONE);
+                versionList.setVisibility(View.GONE);
+                progressBar.setVisibility(View.VISIBLE);
+                refreshText.setVisibility(View.GONE);
+            });
+            try {
+                ModInfo modInfo = new ModInfo(bean);
+                if (modInfo.getDependencies().size() == 0) {
+                    modGameVersionAdapter = new ModGameVersionAdapter(context,modInfo,this);
+                    activity.runOnUiThread(() -> {
+                        dependencyLayout.setVisibility(View.GONE);
+                        versionList.setVisibility(View.VISIBLE);
+                        progressBar.setVisibility(View.GONE);
+                        refreshText.setVisibility(View.GONE);
+                        versionList.setAdapter(modGameVersionAdapter);
+                        reSetListViewHeight(versionList,getVersionListHeight(versionList) - versionList.getLayoutParams().height);
+                    });
+                }
+                else {
+                    modDependencyAdapter = new ModDependencyAdapter(context,activity,modInfo.getDependencies());
+                    modGameVersionAdapter = new ModGameVersionAdapter(context,modInfo,this);
+                    activity.runOnUiThread(() -> {
+                        dependencyLayout.setVisibility(View.VISIBLE);
+                        versionList.setVisibility(View.VISIBLE);
+                        progressBar.setVisibility(View.GONE);
+                        refreshText.setVisibility(View.GONE);
+                        dependencyList.setAdapter(modDependencyAdapter);
+                        versionList.setAdapter(modGameVersionAdapter);
+                        reSetListViewHeight(dependencyList,getDependencyListHeight(dependencyList) - dependencyList.getLayoutParams().height);
+                        reSetListViewHeight(versionList,getVersionListHeight(versionList) - versionList.getLayoutParams().height);
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                activity.runOnUiThread(() -> {
+                    dependencyLayout.setVisibility(View.GONE);
+                    versionList.setVisibility(View.GONE);
+                    progressBar.setVisibility(View.GONE);
+                    refreshText.setVisibility(View.VISIBLE);
+                });
+            }
+        }).start();
+    }
+
+    public void refreshVersionListHeight(int change) {
+        reSetListViewHeight(versionList,change);
+    }
+
+    public static int getVersionListHeight(ListView listView) {
+        int count = listView.getAdapter().getCount();
+        View view = listView.getAdapter().getView(0,null,listView);
+        view.measure(0, 0);
+        return (view.getMeasuredHeight() * count) + (listView.getDividerHeight() * (count - 1));
+    }
+
+    public static int getDependencyListHeight(ListView listView) {
+        int count = listView.getAdapter().getCount();
+        View view = listView.getAdapter().getView(0,null,listView);
+        view.measure(0, 0);
+        return (view.getMeasuredHeight() * count) + (listView.getDividerHeight() * (count - 1));
     }
 
     public static String getMcmodUrl(String mcmodId) {
@@ -98,5 +217,11 @@ public class DownloadResourceUI extends BaseDownloadUI implements View.OnClickLi
 
     public static String getMcbbsUrl(String mcbbsId) {
         return String.format("https://www.mcbbs.net/thread-%s-1-1.html", mcbbsId);
+    }
+
+    public static void reSetListViewHeight(ListView listView,int change) {
+        ViewGroup.LayoutParams params = listView.getLayoutParams();
+        params.height += change;
+        listView.setLayoutParams(params);
     }
 }
