@@ -2,8 +2,11 @@ package cosine.boat;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Handler;
 
 import java.util.*;
+
+import cosine.boat.function.BoatLaunchCallback;
 
 public class LoadMe {
 
@@ -15,13 +18,16 @@ public class LoadMe {
     public static native void setenv(String name, String value);
     public static native int dlopen(String name);
     public static native void patchLinker();
+    public static native void setupExitTrap(Context context);
     public static native int dlexec(String[] args);
 
     static {
         System.loadLibrary("loadme");
     }
 
-    public static int launchMinecraft(Context context,String javaPath, String home, boolean highVersion, Vector<String> args, String renderer,String gameDir) {
+    public static int launchMinecraft(Handler handler,Context context, String javaPath, String home, boolean highVersion, Vector<String> args, String renderer, String gameDir, BoatLaunchCallback callback) {
+
+        handler.post(callback::onStart);
 
         BOAT_LIB_DIR = context.getDir("runtime",0).getAbsolutePath() + "/boat";
 
@@ -118,6 +124,8 @@ public class LoadMe {
                 dlopen(BOAT_LIB_DIR + "/lwjgl-3/liblwjgl_opengl.so");
             }
 
+            setupExitTrap(context);
+
             redirectStdio(home + "/boat_latest_log.txt");
             chdir(gameDir);
 
@@ -128,10 +136,14 @@ public class LoadMe {
                     System.out.println("Minecraft Args:" + finalArgs[i]);
                 }
 			}
-            System.out.println("OpenJDK exited with code : " + dlexec(finalArgs));
+            int exitCode = dlexec(finalArgs);
+            System.out.println("OpenJDK exited with code : " + exitCode);
         }
         catch (Exception e) {
             e.printStackTrace();
+            handler.post(() -> {
+                callback.onError(e);
+            });
 			return 1;
         }
 		return 0;

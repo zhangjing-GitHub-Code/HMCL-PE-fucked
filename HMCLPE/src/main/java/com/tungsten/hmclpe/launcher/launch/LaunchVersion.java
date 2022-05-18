@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import cosine.boat.BoatUtils;
+import cosine.boat.utils.BoatUtils;
 
 public class LaunchVersion {
 
@@ -151,7 +151,7 @@ public class LaunchVersion {
         }
     }
 
-    public String getClassPath(String gameFileDir,boolean isJava17) {
+    public String getClassPath(String gameFileDir,boolean high,boolean isJava17) {
         String cp = "";
         int count = 0;
         String libraries_path = gameFileDir + "/libraries/";
@@ -179,10 +179,13 @@ public class LaunchVersion {
             cp = cp + path;
             count++;
         }
-        if (count > 0) {
-            cp = ":" + cp;
+        String split = count > 0 ? ":" : "";
+        if (high) {
+            cp = cp + split + minecraftPath;
         }
-        cp = minecraftPath + cp;
+        else {
+            cp = minecraftPath + split + cp;
+        }
         return cp;
     }
 

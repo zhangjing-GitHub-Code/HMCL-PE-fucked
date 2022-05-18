@@ -1,6 +1,7 @@
 package com.tungsten.hmclpe.launcher.list.download.minecraft.forge;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,9 +13,12 @@ import android.widget.TextView;
 
 import com.tungsten.hmclpe.R;
 import com.tungsten.hmclpe.launcher.MainActivity;
+import com.tungsten.hmclpe.launcher.download.GameUpdateDialog;
 import com.tungsten.hmclpe.launcher.download.forge.ForgeVersion;
-import com.tungsten.hmclpe.utils.string.StringUtils;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class DownloadForgeListAdapter extends BaseAdapter {
@@ -29,16 +33,6 @@ public class DownloadForgeListAdapter extends BaseAdapter {
         this.activity = activity;
         this.versions = versions;
         this.install = install;
-    }
-
-    private String getReleaseTime(String time){
-        int p1 = time.indexOf("-",0);
-        String str1 = StringUtils.substringBefore(time,"-") + " " + context.getString(R.string.download_minecraft_item_year) + " " + time.substring(p1 + 1);
-        int p2 = str1.indexOf("-",0);
-        String str2 = StringUtils.substringBefore(str1,"-") + " " + context.getString(R.string.download_minecraft_item_month) + " " + str1.substring(p2 + 1);
-        int p3 = str2.indexOf("T",0);
-        String str3 = StringUtils.substringBefore(str2,"T") + " " + context.getString(R.string.download_minecraft_item_day) + " " + str2.substring(p3 + 1);
-        return StringUtils.substringBefore(str3,".");
     }
 
     private class ViewHolder{
@@ -86,10 +80,24 @@ public class DownloadForgeListAdapter extends BaseAdapter {
         viewHolder.icon.setImageDrawable(context.getDrawable(R.drawable.ic_forge));
         viewHolder.forgeId.setText(version.getVersion());
         viewHolder.mcVersion.setText(version.getGameVersion());
-        viewHolder.releaseTime.setText(getReleaseTime(version.getModified()));
+        viewHolder.releaseTime.setText(DateTimeFormatter.ofPattern(context.getString(R.string.time_pattern)).withZone(ZoneId.systemDefault()).format(Instant.parse(version.getModified())));
         viewHolder.item.setOnClickListener(v -> {
             if (install) {
-
+                if (activity.uiManager.gameManagerUI.gameManagerUIManager.autoInstallUI.forgeVersion != null) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                    builder.setTitle(context.getString(R.string.dialog_change_version_title));
+                    builder.setMessage(context.getString(R.string.dialog_change_version_msg).replace("%s","Forge").replace("%v1",activity.uiManager.gameManagerUI.gameManagerUIManager.autoInstallUI.forgeVersion).replace("%v2",version.getVersion()));
+                    builder.setPositiveButton(context.getString(R.string.dialog_change_version_positive), (dialogInterface, i1) -> {
+                        update(version);
+                    });
+                    builder.setNegativeButton(context.getString(R.string.dialog_change_version_negative), (dialogInterface, i12) -> {
+                        activity.backToLastUI();
+                    });
+                    builder.create().show();
+                }
+                else {
+                    update(version);
+                }
             }
             else {
                 activity.uiManager.installGameUI.forgeVersion = version;
@@ -97,5 +105,10 @@ public class DownloadForgeListAdapter extends BaseAdapter {
             }
         });
         return view;
+    }
+
+    private void update(ForgeVersion forgeVersion) {
+        GameUpdateDialog dialog = new GameUpdateDialog(context,activity,activity.uiManager.gameManagerUI.gameManagerUIManager.autoInstallUI.versionName,activity.uiManager.gameManagerUI.gameManagerUIManager.autoInstallUI.gameVersion,0,forgeVersion);
+        dialog.show();
     }
 }

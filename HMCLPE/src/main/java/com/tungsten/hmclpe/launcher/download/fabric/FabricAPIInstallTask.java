@@ -38,7 +38,7 @@ public class FabricAPIInstallTask extends AsyncTask<ModListBean.Version,Integer,
     protected void onPreExecute() {
         super.onPreExecute();
         callback.onStart();
-        adapter.addDownloadTask(bean);
+        if (!isCancelled()) adapter.addDownloadTask(bean);
     }
 
     @Override
@@ -51,16 +51,17 @@ public class FabricAPIInstallTask extends AsyncTask<ModListBean.Version,Integer,
         else {
             path = PrivateGameSetting.getGameDir(activity.launcherSetting.gameFileDirectory,activity.launcherSetting.gameFileDirectory + "/versions/" + name,GsonUtils.getPrivateGameSettingFromFile(AppManifest.SETTING_DIR + "/private_game_setting.json").gameDirSetting);
         }
-        String modPath = path + "/mods/" + fabricAPIVersion.getFile().getFilename();
+        String fileName = "fabric-api-" + fabricAPIVersion.getVersion() + ".jar";
+        String modPath = path + "/mods/" + fileName;
         String url = fabricAPIVersion.getFile().getUrl();
-        DownloadTaskListBean bean = new DownloadTaskListBean(fabricAPIVersion.getFile().getFilename(), url, modPath,null);
+        DownloadTaskListBean bean = new DownloadTaskListBean(fileName, url, modPath,fabricAPIVersion.getFile().getHashes().get("sha1"));
         DownloadTask.DownloadFeedback feedback = new DownloadTask.DownloadFeedback() {
             @Override
             public void updateProgress(long curr, long max) {
                 long progress = 100 * curr / max;
                 bean.progress = (int) progress;
                 activity.runOnUiThread(() -> {
-                    adapter.onProgress(bean);
+                    if (!isCancelled()) adapter.onProgress(bean);
                 });
             }
 
@@ -72,27 +73,27 @@ public class FabricAPIInstallTask extends AsyncTask<ModListBean.Version,Integer,
         for (int i = 0;i < 5;i++) {
             try {
                 activity.runOnUiThread(() -> {
-                    adapter.addDownloadTask(bean);
+                    if (!isCancelled()) adapter.addDownloadTask(bean);
                 });
                 if (DownloadUtil.downloadFile(url,modPath,null,feedback)) {
                     activity.runOnUiThread(() -> {
-                        adapter.onComplete(bean);
+                        if (!isCancelled()) adapter.onComplete(bean);
                     });
                     if (!isCancelled()) return null;
                 }
                 else {
                     activity.runOnUiThread(() -> {
-                        adapter.onComplete(bean);
+                        if (!isCancelled()) adapter.onComplete(bean);
                     });
                     if (i == 4) {
-                        if (!isCancelled()) return new Exception("Failed to download " + fabricAPIVersion.getFile().getFilename());
+                        if (!isCancelled()) return new Exception("Failed to download " + fileName);
                     }
                 }
             }
             catch (IOException e) {
                 e.printStackTrace();
                 activity.runOnUiThread(() -> {
-                    adapter.onComplete(bean);
+                    if (!isCancelled()) adapter.onComplete(bean);
                 });
                 if (i == 4) {
                     if (!isCancelled()) return e;
