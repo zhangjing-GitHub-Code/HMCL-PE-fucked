@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import com.tungsten.hmclpe.R;
 import com.tungsten.hmclpe.launcher.MainActivity;
 import com.tungsten.hmclpe.launcher.mod.ModListBean;
+import com.tungsten.hmclpe.launcher.mod.curse.CurseModManager;
 import com.tungsten.hmclpe.launcher.uis.game.download.right.resource.DownloadResourceUI;
 import com.tungsten.hmclpe.utils.string.ModTranslations;
 
@@ -34,7 +35,7 @@ public class DownloadResourceAdapter extends BaseAdapter {
     private Context context;
     private MainActivity activity;
     private ArrayList<ModListBean.Mod> modList;
-    private boolean isMod;
+    private int type;
 
     private class ViewHolder{
         LinearLayout item;
@@ -44,11 +45,11 @@ public class DownloadResourceAdapter extends BaseAdapter {
         TextView introduction;
     }
 
-    public DownloadResourceAdapter(Context context, MainActivity activity, ArrayList<ModListBean.Mod> modList, boolean isMod){
+    public DownloadResourceAdapter(Context context, MainActivity activity, ArrayList<ModListBean.Mod> modList, int type){
         this.context = context;
         this.activity = activity;
         this.modList = modList;
-        this.isMod = isMod;
+        this.type = type;
     }
 
     @Override
@@ -101,15 +102,35 @@ public class DownloadResourceAdapter extends BaseAdapter {
                 e.printStackTrace();
             }
         }).start();
-        String categories = "";
-        for (int i = 0;i < modList.get(position).getCategories().size();i++){
-            //categories = categories + SearchTools.getCategoryFromID(context,modList.get(position).getCategories().get(i)) + "  ";
+        StringBuilder categories = new StringBuilder();
+        if (modList.get(position).getModrinthCategories().size() != 0) {
+            for (int i = 0;i < modList.get(position).getModrinthCategories().size();i++){
+                String c;
+                int resId = context.getResources().getIdentifier("modrinth_category_" + modList.get(position).getModrinthCategories().get(i),"string","com.tungsten.hmclpe");
+                if (resId != 0 && context.getString(resId) != null) {
+                    c = context.getString(resId);
+                }
+                else {
+                    c = modList.get(position).getModrinthCategories().get(i);
+                }
+                categories.append(c).append((i != modList.get(position).getModrinthCategories().size()) ? "   " : "");
+            }
         }
-        viewHolder.categories.setText(categories);
-        viewHolder.name.setText((isMod && ModTranslations.getModByCurseForgeId(modList.get(position).getSlug()) != null && Objects.requireNonNull(ModTranslations.getModByCurseForgeId(modList.get(position).getSlug())).getDisplayName() != null) ? Objects.requireNonNull(ModTranslations.getModByCurseForgeId(modList.get(position).getSlug())).getDisplayName() : modList.get(position).getTitle());
+        else {
+            for (int i = 0;i < modList.get(position).getCategories().size();i++){
+                String c = "";
+                int resId = context.getResources().getIdentifier("curse_category_" + modList.get(position).getCategories().get(i),"string","com.tungsten.hmclpe");
+                if (resId != 0 && context.getString(resId) != null) {
+                    c = context.getString(resId);
+                }
+                categories.append(c).append((i != modList.get(position).getCategories().size() && !c.equals("")) ? "   " : "");
+            }
+        }
+        viewHolder.categories.setText(categories.toString());
+        viewHolder.name.setText((type == 0 && ModTranslations.getModByCurseForgeId(modList.get(position).getSlug()) != null && Objects.requireNonNull(ModTranslations.getModByCurseForgeId(modList.get(position).getSlug())).getDisplayName() != null) ? Objects.requireNonNull(ModTranslations.getModByCurseForgeId(modList.get(position).getSlug())).getDisplayName() : modList.get(position).getTitle());
         viewHolder.introduction.setText(modList.get(position).getDescription());
         viewHolder.item.setOnClickListener(view -> {
-            DownloadResourceUI downloadResourceUI = new DownloadResourceUI(context,activity,modList.get(position),isMod);
+            DownloadResourceUI downloadResourceUI = new DownloadResourceUI(context,activity,modList.get(position),type);
             activity.uiManager.switchMainUI(downloadResourceUI);
         });
         return convertView;

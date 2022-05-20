@@ -28,8 +28,9 @@ import com.tungsten.hmclpe.launcher.list.download.DownloadResourceAdapter;
 import com.tungsten.hmclpe.launcher.mod.SearchTools;
 import com.tungsten.hmclpe.launcher.mod.ModListBean;
 import com.tungsten.hmclpe.launcher.mod.curse.CurseModManager;
+import com.tungsten.hmclpe.launcher.setting.SettingUtils;
 import com.tungsten.hmclpe.launcher.uis.tools.BaseUI;
-import com.tungsten.hmclpe.launcher.view.spinner.SpinnerAdapter;
+import com.tungsten.hmclpe.launcher.view.spinner.CFCSpinnerAdapter;
 import com.tungsten.hmclpe.utils.animation.CustomAnimationUtils;
 
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ public class DownloadResourcePackUI extends BaseUI implements View.OnClickListen
 
     public LinearLayout downloadResourcePackUI;
 
+    private Spinner gameSpinner;
     private EditText editName;
     private EditText editVersion;
     private Spinner editVersionSpinner;
@@ -48,12 +50,14 @@ public class DownloadResourcePackUI extends BaseUI implements View.OnClickListen
     private Spinner editSort;
     private Button search;
 
+    private ArrayList<String> gameList;
+    private ArrayAdapter<String> gameListAdapter;
     private ArrayList<String> sortList;
     private ArrayAdapter<String> sortListAdapter;
     private ArrayList<String> versionList;
     private ArrayAdapter<String> versionListAdapter;
     private ArrayList<CurseModManager.Category> categoryList;
-    private SpinnerAdapter categoryListAdapter;
+    private CFCSpinnerAdapter categoryListAdapter;
 
     private boolean isSearching = false;
 
@@ -73,6 +77,7 @@ public class DownloadResourcePackUI extends BaseUI implements View.OnClickListen
         super.onCreate();
         downloadResourcePackUI = activity.findViewById(R.id.ui_download_resource_pack);
 
+        gameSpinner = activity.findViewById(R.id.download_resource_pack_arg_game);
         editName = activity.findViewById(R.id.download_resource_pack_arg_name);
         editVersion = activity.findViewById(R.id.edit_download_resource_pack_arg_version);
         editVersionSpinner = activity.findViewById(R.id.download_resource_pack_arg_version);
@@ -81,6 +86,10 @@ public class DownloadResourcePackUI extends BaseUI implements View.OnClickListen
 
         search = activity.findViewById(R.id.search_resource_pack);
         search.setOnClickListener(this);
+
+        gameList = SettingUtils.getLocalVersionNames(activity.launcherSetting.gameFileDirectory);
+        gameListAdapter = new ArrayAdapter<>(context,R.layout.item_spinner,gameList);
+        gameSpinner.setAdapter(gameListAdapter);
 
         sortList = new ArrayList<>();
         sortList.add(context.getString(R.string.download_mod_sort_date));
@@ -111,9 +120,10 @@ public class DownloadResourcePackUI extends BaseUI implements View.OnClickListen
                 category.setName(context.getString(resId));
             }
         }
-        categoryListAdapter = new SpinnerAdapter(context,categoryList,12);
+        categoryListAdapter = new CFCSpinnerAdapter(context,categoryList,12);
         editCategory.setAdapter(categoryListAdapter);
 
+        gameSpinner.setOnItemSelectedListener(this);
         editVersionSpinner.setOnItemSelectedListener(this);
         editCategory.setOnItemSelectedListener(this);
         editSort.setOnItemSelectedListener(this);
@@ -128,7 +138,7 @@ public class DownloadResourcePackUI extends BaseUI implements View.OnClickListen
 
         resourcePackListView = activity.findViewById(R.id.download_resource_pack_list);
         resourcePackList = new ArrayList<>();
-        downloadResourcePackListAdapter = new DownloadResourceAdapter(context,activity,resourcePackList,false);
+        downloadResourcePackListAdapter = new DownloadResourceAdapter(context,activity,resourcePackList,2);
         resourcePackListView.setAdapter(downloadResourcePackListAdapter);
     }
 
@@ -157,6 +167,11 @@ public class DownloadResourcePackUI extends BaseUI implements View.OnClickListen
         }
     }
 
+    private void refreshGameList() {
+        gameList = SettingUtils.getLocalVersionNames(activity.launcherSetting.gameFileDirectory);
+        gameListAdapter.notifyDataSetChanged();
+    }
+
     private void search(){
         if (!isSearching){
             new Thread(() -> {
@@ -164,7 +179,7 @@ public class DownloadResourcePackUI extends BaseUI implements View.OnClickListen
                     searchHandler.sendEmptyMessage(0);
                     List<CurseModManager.Category> categories;
                     categories = CurseModManager.getCategories(SearchTools.SECTION_RESOURCE_PACK);
-                    Stream<ModListBean.Mod> stream = SearchTools.search("", editVersion.getText().toString(), ((CurseModManager.Category) editCategory.getSelectedItem()).getId(), SearchTools.SECTION_RESOURCE_PACK, SearchTools.DEFAULT_PAGE_OFFSET, editName.getText().toString(), editSort.getSelectedItemPosition());
+                    Stream<ModListBean.Mod> stream = SearchTools.search("", editVersion.getText().toString(), ((CurseModManager.Category) editCategory.getSelectedItem()).getId(), null, SearchTools.SECTION_RESOURCE_PACK, SearchTools.DEFAULT_PAGE_OFFSET, editName.getText().toString(), editSort.getSelectedItemPosition());
                     List<ModListBean.Mod> list = stream.collect(toList());
                     resourcePackList.clear();
                     resourcePackList.addAll(list);
