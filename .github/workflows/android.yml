@@ -18,6 +18,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Setup timezone
+      # You may pin to the exact commit or the version.
+      # uses: zcong1993/setup-timezone@7215c3ec086d387e4618c4b81482d06d998c90a9
+      uses: zcong1993/setup-timezone@v1.1.2
+      with:
+        # which timezone you want to use
+        timezone: Asia/Shanghai # default is UTC
     - name: Fuck you bad packet header
       run: |
         git config --global pack.windowMemory "100m"
