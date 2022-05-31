@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.view.InputDevice;
 import android.view.Surface;
 import android.view.WindowManager;
 
@@ -140,24 +141,37 @@ public class BoatMinecraftActivity extends BoatActivity {
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
-            if (msg.what == BoatInput.CursorDisabled && menuHelper.viewManager != null) {
-                menuHelper.viewManager.disableCursor();
+            if (msg.what == BoatInput.CursorDisabled) {
+                menuHelper.disableCursor();
             }
-            if (msg.what == BoatInput.CursorEnabled && menuHelper.viewManager != null) {
-                menuHelper.viewManager.enableCursor();
+            if (msg.what == BoatInput.CursorEnabled) {
+                menuHelper.enableCursor();
             }
         }
     };
 
     @Override
     public void onBackPressed() {
-        BoatInput.setKey(BoatKeycodes.KEY_ESC, 0, true);
-        BoatInput.setKey(BoatKeycodes.KEY_ESC, 0, false);
+        boolean mouse = false;
+        final int[] devices = InputDevice.getDeviceIds();
+        for (int j : devices) {
+            InputDevice device = InputDevice.getDevice(j);
+            if (device != null && !device.isVirtual()) {
+                if (device.getName().contains("Mouse")) {
+                    mouse = true;
+                    break;
+                }
+            }
+        }
+        if (!mouse) {
+            BoatInput.setKey(BoatKeycodes.KEY_ESC, 0, true);
+            BoatInput.setKey(BoatKeycodes.KEY_ESC, 0, false);
+        }
     }
 
     @Override
     protected void onPause() {
-        if (menuHelper.viewManager != null && menuHelper.viewManager.gameCursorMode == 1) {
+        if (menuHelper.viewManager != null && menuHelper.gameCursorMode == 1) {
             BoatInput.setKey(BoatKeycodes.KEY_ESC, 0, true);
             BoatInput.setKey(BoatKeycodes.KEY_ESC, 0, false);
         }

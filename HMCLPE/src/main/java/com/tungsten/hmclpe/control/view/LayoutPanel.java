@@ -83,7 +83,7 @@ public class LayoutPanel extends RelativeLayout {
         invalidate();
     }
 
-    public void showReference(int positionMode, float x, float y,int width,int height){
+    public void showReference(int positionMode, float x, float y, int width, int height){
         this.positionMode = positionMode;
         if (positionMode == POSITION_MODE_PERCENT){
             xText = "X:" + ((int) ((x / (getWidth() - width)) * 1000)) / 10f + "%";

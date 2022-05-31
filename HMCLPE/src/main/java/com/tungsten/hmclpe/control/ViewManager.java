@@ -39,7 +39,6 @@ public class ViewManager implements SensorEventListener {
     public int screenWidth;
     public int screenHeight;
 
-    public int gameCursorMode = 0;
     public TouchPad touchPad;
 
     public MenuFloat menuFloat;
@@ -50,11 +49,6 @@ public class ViewManager implements SensorEventListener {
     public static final float NS2S = 1.0f / 1000000000.0f;
     public float timestamp;
     public float[] angle = new float[3];
-
-    public float pointerX;
-    public float pointerY;
-    public float currentX;
-    public float currentY;
 
     public String viewMovingType = "0";
 
@@ -228,14 +222,15 @@ public class ViewManager implements SensorEventListener {
 
     public void hideUI(boolean b) {
         for (int i = 0;i < layoutPanel.getChildCount();i++) {
-            layoutPanel.getChildAt(i).setAlpha(b ? 0 : 1);
+            if (!(layoutPanel.getChildAt(i) instanceof TouchPad)) {
+                layoutPanel.getChildAt(i).setAlpha(b ? 0 : 1);
+            }
         }
     }
 
-    public void enableCursor(){
-        gameCursorMode = 0;
+    public void enableCursor() {
         if (touchPad != null){
-            InputBridge.setPointer(launcher,(int) (touchPad.cursorX * menuHelper.scaleFactor),(int) (touchPad.cursorY * menuHelper.scaleFactor));
+            InputBridge.setPointer(launcher,(int) (menuHelper.cursorX * menuHelper.scaleFactor),(int) (menuHelper.cursorY * menuHelper.scaleFactor));
         }
         for (int i = 0;i < layoutPanel.getChildCount();i++) {
             if (layoutPanel.getChildAt(i) instanceof BaseButton){
@@ -247,8 +242,7 @@ public class ViewManager implements SensorEventListener {
         }
     }
 
-    public void disableCursor(){
-        gameCursorMode = 1;
+    public void disableCursor() {
         viewMovingType = "0";
         for (int i = 0;i < layoutPanel.getChildCount();i++) {
             if (layoutPanel.getChildAt(i) instanceof BaseButton){
@@ -260,29 +254,29 @@ public class ViewManager implements SensorEventListener {
         }
     }
 
-    public void setSensorEnable(boolean enable){
+    public void setSensorEnable(boolean enable) {
         if (enable) {
             sensorManager.registerListener(this,sensor,SensorManager.SENSOR_DELAY_FASTEST);
         }
         else {
             sensorManager.unregisterListener(this);
-            if (gameCursorMode == 1){
-                InputBridge.setPointer(launcher,(int) currentX,(int) currentY);
+            if (menuHelper.gameCursorMode == 1){
+                InputBridge.setPointer(launcher,(int) menuHelper.currentX,(int) menuHelper.currentY);
             }
         }
     }
 
-    public void setGamePointer(String uuid,boolean isMoving,float deltaX,float deltaY){
+    public void setGamePointer(String uuid,boolean isMoving,float deltaX,float deltaY) {
         if (viewMovingType.equals("0") || viewMovingType.equals(uuid)){
             if (!menuHelper.gameMenuSetting.enableSensor){
-                InputBridge.setPointer(launcher,(int) (pointerX + deltaX * menuHelper.gameMenuSetting.mouseSpeed),(int) (pointerY + deltaY * menuHelper.gameMenuSetting.mouseSpeed));
+                InputBridge.setPointer(launcher,(int) (menuHelper.pointerX + deltaX * menuHelper.gameMenuSetting.mouseSpeed),(int) (menuHelper.pointerY + deltaY * menuHelper.gameMenuSetting.mouseSpeed));
             }
-            currentX = pointerX + deltaX * menuHelper.gameMenuSetting.mouseSpeed;
-            currentY = pointerY + deltaY * menuHelper.gameMenuSetting.mouseSpeed;
+            menuHelper.currentX = menuHelper.pointerX + deltaX * menuHelper.gameMenuSetting.mouseSpeed;
+            menuHelper.currentY = menuHelper.pointerY + deltaY * menuHelper.gameMenuSetting.mouseSpeed;
             viewMovingType = uuid;
             if (!isMoving){
-                pointerX = pointerX + deltaX * menuHelper.gameMenuSetting.mouseSpeed;
-                pointerY = pointerY + deltaY * menuHelper.gameMenuSetting.mouseSpeed;
+                menuHelper.pointerX = menuHelper.pointerX + deltaX * menuHelper.gameMenuSetting.mouseSpeed;
+                menuHelper.pointerY = menuHelper.pointerY + deltaY * menuHelper.gameMenuSetting.mouseSpeed;
                 viewMovingType = "0";
             }
         }
@@ -290,14 +284,14 @@ public class ViewManager implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        if (gameCursorMode == 1){
+        if (menuHelper.gameCursorMode == 1){
             if (timestamp != 0){
                 final float dT = (sensorEvent.timestamp - timestamp) * NS2S;
                 angle[0] += sensorEvent.values[0] * dT;
                 angle[1] += sensorEvent.values[1] * dT;
                 float angleX = (float) Math.toDegrees(angle[0]);
                 float angleY = (float) Math.toDegrees(angle[1]);
-                InputBridge.setPointer(launcher,(int) (currentX - angleX * menuHelper.gameMenuSetting.sensitivity),(int) (currentY + angleY * menuHelper.gameMenuSetting.sensitivity));
+                InputBridge.setPointer(launcher,(int) (menuHelper.currentX - angleX * menuHelper.gameMenuSetting.sensitivity),(int) (menuHelper.currentY + angleY * menuHelper.gameMenuSetting.sensitivity));
             }
             timestamp = sensorEvent.timestamp;
         }

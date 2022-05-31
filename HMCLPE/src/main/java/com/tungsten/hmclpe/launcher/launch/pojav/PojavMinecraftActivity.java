@@ -6,6 +6,7 @@ import static org.lwjgl.glfw.CallbackBridge.windowWidth;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.InputDevice;
 import android.view.Surface;
 import android.view.WindowManager;
 
@@ -67,10 +68,9 @@ public class PojavMinecraftActivity extends BaseMainActivity {
 
         handleCallback();
 
-        menuHelper = new MenuHelper(this,this,gameLaunchSetting.fullscreen,gameLaunchSetting.game_directory,drawerLayout,baseLayout,false,gameLaunchSetting.controlLayout,2,scaleFactor);
-
         init(gameLaunchSetting.game_directory, GameLaunchSetting.isHighVersion(gameLaunchSetting));
 
+        menuHelper = new MenuHelper(this,this,gameLaunchSetting.fullscreen,gameLaunchSetting.game_directory,drawerLayout,baseLayout,false,gameLaunchSetting.controlLayout,2,scaleFactor);
     }
 
     public void handleCallback() {
@@ -113,12 +113,12 @@ public class PojavMinecraftActivity extends BaseMainActivity {
 
             @Override
             public void onCursorModeChange(int mode) {
-                if (menuHelper != null && menuHelper.viewManager != null) {
+                if (menuHelper != null) {
                     if (mode == 1){
-                        menuHelper.viewManager.enableCursor();
+                        menuHelper.enableCursor();
                     }
                     else {
-                        menuHelper.viewManager.disableCursor();
+                        menuHelper.disableCursor();
                     }
                 }
             }
@@ -147,12 +147,25 @@ public class PojavMinecraftActivity extends BaseMainActivity {
 
     @Override
     public void onBackPressed() {
-        CallbackBridge.sendKeyPress(LWJGLGLFWKeycode.GLFW_KEY_ESCAPE);
+        boolean mouse = false;
+        final int[] devices = InputDevice.getDeviceIds();
+        for (int j : devices) {
+            InputDevice device = InputDevice.getDevice(j);
+            if (device != null && !device.isVirtual()) {
+                if (device.getName().contains("Mouse")) {
+                    mouse = true;
+                    break;
+                }
+            }
+        }
+        if (!mouse) {
+            CallbackBridge.sendKeyPress(LWJGLGLFWKeycode.GLFW_KEY_ESCAPE);
+        }
     }
 
     @Override
     protected void onPause() {
-        if (menuHelper.viewManager != null && menuHelper.viewManager.gameCursorMode == 1) {
+        if (menuHelper.viewManager != null && menuHelper.gameCursorMode == 1) {
             CallbackBridge.sendKeyPress(LWJGLGLFWKeycode.GLFW_KEY_ESCAPE);
         }
         super.onPause();

@@ -88,7 +88,17 @@ public class MenuHelper implements CompoundButton.OnCheckedChangeListener, View.
     public ArrayList<String> childLayoutList;
     public ArrayAdapter<String> childAdapter;
 
+    public int gameCursorMode = 0;
+
     public ViewManager viewManager;
+    public MKManager mkManager;
+
+    public float cursorX;
+    public float cursorY;
+    public float pointerX;
+    public float pointerY;
+    public float currentX;
+    public float currentY;
 
     public MenuHelper(Context context, AppCompatActivity activity,boolean fullscreen,String gameDir, DrawerLayout drawerLayout, LayoutPanel baseLayout,boolean editMode,String currentPattern,int launcher,float scaleFactor){
         this.context = context;
@@ -119,6 +129,26 @@ public class MenuHelper implements CompoundButton.OnCheckedChangeListener, View.
         }
         else {
             preInit(baseLayout,editMode,currentPattern);
+        }
+    }
+
+    public void enableCursor() {
+        gameCursorMode = 0;
+        if (viewManager != null) {
+            viewManager.enableCursor();
+        }
+        if (mkManager != null) {
+            mkManager.enableCursor();
+        }
+    }
+
+    public void disableCursor(){
+        gameCursorMode = 1;
+        if (viewManager != null) {
+            viewManager.disableCursor();
+        }
+        if (mkManager != null) {
+            mkManager.disableCursor();
         }
     }
 
@@ -255,7 +285,8 @@ public class MenuHelper implements CompoundButton.OnCheckedChangeListener, View.
         baseLayout.post(() -> {
             screenWidth = baseLayout.getWidth();
             screenHeight = baseLayout.getHeight();
-            viewManager = new ViewManager(context,activity,MenuHelper.this,baseLayout,launcher);
+            viewManager = new ViewManager(context,activity,this,baseLayout,launcher);
+            mkManager = new MKManager(this);
             checkOpenMenuSetting();
         });
 
