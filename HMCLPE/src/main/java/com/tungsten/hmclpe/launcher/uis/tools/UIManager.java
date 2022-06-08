@@ -14,6 +14,8 @@ import com.tungsten.hmclpe.launcher.uis.game.download.right.game.DownloadOptifin
 import com.tungsten.hmclpe.launcher.uis.game.download.right.game.InstallGameUI;
 import com.tungsten.hmclpe.launcher.uis.game.download.right.resource.BaseDownloadUI;
 import com.tungsten.hmclpe.launcher.uis.game.manager.GameManagerUI;
+import com.tungsten.hmclpe.launcher.uis.game.manager.universal.ExportWorldUI;
+import com.tungsten.hmclpe.launcher.uis.game.manager.universal.PackMcManagerUI;
 import com.tungsten.hmclpe.launcher.uis.game.version.VersionListUI;
 import com.tungsten.hmclpe.launcher.uis.game.version.universal.AddGameDirectoryUI;
 import com.tungsten.hmclpe.launcher.uis.game.version.universal.InstallPackageUI;
@@ -31,6 +33,8 @@ public class UIManager {
     public DownloadUI downloadUI;
     public SettingUI settingUI;
 
+    public PackMcManagerUI packMcManagerUI;
+    public ExportWorldUI exportWorldUI;
     public AddGameDirectoryUI addGameDirectoryUI;
     public InstallPackageUI installPackageUI;
 
@@ -53,6 +57,8 @@ public class UIManager {
         downloadUI = new DownloadUI(context,activity);
         settingUI = new SettingUI(context,activity);
 
+        packMcManagerUI = new PackMcManagerUI(context,activity);
+        exportWorldUI = new ExportWorldUI(context,activity);
         addGameDirectoryUI = new AddGameDirectoryUI(context,activity);
         installPackageUI = new InstallPackageUI(context,activity);
 
@@ -70,6 +76,8 @@ public class UIManager {
         downloadUI.onCreate();
         settingUI.onCreate();
 
+        packMcManagerUI.onCreate();
+        exportWorldUI.onCreate();
         addGameDirectoryUI.onCreate();
         installPackageUI.onCreate();
 
@@ -80,7 +88,7 @@ public class UIManager {
         downloadLiteLoaderUI.onCreate();
         downloadOptifineUI.onCreate();
 
-        mainUIs = new BaseUI[]{mainUI,addGameDirectoryUI,installPackageUI,accountUI,gameManagerUI,versionListUI,downloadUI,settingUI,installGameUI,downloadForgeUI,downloadFabricUI,downloadLiteLoaderUI,downloadOptifineUI,downloadFabricAPIUI};
+        mainUIs = new BaseUI[]{mainUI,packMcManagerUI,exportWorldUI,addGameDirectoryUI,installPackageUI,accountUI,gameManagerUI,versionListUI,downloadUI,settingUI,installGameUI,downloadForgeUI,downloadFabricUI,downloadLiteLoaderUI,downloadOptifineUI,downloadFabricAPIUI};
         uis = new ArrayList<>();
         switchMainUI(mainUI);
     }
