@@ -12,7 +12,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import android.content.Context;
 import android.util.Log;
 
-import com.github.gzuliyujiang.oaid.DeviceIdentifier;
 
 /**
  *
@@ -103,12 +102,6 @@ public final class DigestUtils {
             hexString = new StringBuilder(String.valueOf(0)).append(hexString).toString();
         }
         return hexString.toUpperCase();
-    }
-    public static String getDeviceCode(Context context) {
-        return DigestUtils.encryptToMD5(DeviceIdentifier.getOAID(context)
-                + DeviceIdentifier.getAndroidID(context)
-                + DeviceIdentifier.getWidevineID()
-                + DeviceIdentifier.getPseudoID());
     }
 
 }
