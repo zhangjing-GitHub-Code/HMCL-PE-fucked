@@ -6,9 +6,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
+/* import android.content.Context; */
 import android.content.Intent;
-import android.content.SharedPreferences;
+/* import android.content.SharedPreferences; */
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,7 +24,7 @@ import android.widget.TextView;
 import com.afollestad.appthemeengine.ATE;
 import com.afollestad.appthemeengine.Config;
 import com.tungsten.hmclpe.R;
-import com.tungsten.hmclpe.launcher.dialogs.VerifyDialog;
+/* import com.tungsten.hmclpe.launcher.dialogs.VerifyDialog; */
 import com.tungsten.hmclpe.launcher.dialogs.account.SkinPreviewDialog;
 import com.tungsten.hmclpe.manifest.AppManifest;
 import com.tungsten.hmclpe.launcher.setting.InitializeSetting;
@@ -37,20 +37,20 @@ import com.tungsten.hmclpe.launcher.uis.universal.setting.right.launcher.Exterio
 import com.tungsten.hmclpe.update.UpdateChecker;
 import com.tungsten.hmclpe.utils.animation.CustomAnimationUtils;
 
-import co.nedim.maildroidx.MaildroidX;
+/* import co.nedim.maildroidx.MaildroidX; */
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    static {
-        System.loadLibrary("security");
-    }
-    native void securityInit();
-    public native boolean isValid(String str);
-    public static native void verify();
-    public static native void verifyFunc();
-    public native void launch(Intent intent);
-    public native void sendMail(String to, String title, String body, MaildroidX.onCompleteCallback callback);
-
+    /* static { */
+    /*     System.loadLibrary("security"); */
+    /* } */
+    /* native void securityInit(); */
+    /* public native boolean isValid(String str); */
+    /* public static native void verify(); */
+    /* public static native void verifyFunc(); */
+    /* public native void launch(Intent intent); */
+    /* public native void sendMail(String to, String title, String body, MaildroidX.onCompleteCallback callback); */
+    /*  */
     public LinearLayout launcherLayout;
 
     public boolean isLoaded = false;
@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         launcherLayout = findViewById(R.id.launcher_layout);
 
-        securityInit();
+        /* securityInit(); */
         
         init();
     }
@@ -346,29 +346,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onDestroy();
     }
 
-    public void startVerify() {
-        startVerify(new VerifyInterface() {
-            @Override
-            public void onSuccess() {
-
-            }
-
-            @Override
-            public void onCancel() {
-                finish();
-            }
-        });
-    }
-
-    public void startVerify(VerifyInterface verifyInterface){
-        SharedPreferences msh = getSharedPreferences("Security", Context.MODE_PRIVATE);
-        SharedPreferences.Editor mshe = msh.edit();
-        if (msh.getBoolean("verified",false) && isValid(msh.getString("code",null))) {
-            verifyInterface.onSuccess();
-            return;
-        }
-        VerifyDialog dialog = new VerifyDialog(this, this, mshe, verifyInterface);
-        dialog.show();
-    }
+    /* public void startVerify() { */
+    /*     startVerify(new VerifyInterface() { */
+    /*         @Override */
+    /*         public void onSuccess() { */
+    /*  */
+    /*         } */
+    /*  */
+    /*         @Override */
+    /*         public void onCancel() { */
+    /*             finish(); */
+    /*         } */
+    /*     }); */
+    /* } */
+    /*  */
+    /* public void startVerify(VerifyInterface verifyInterface){ */
+    /*     SharedPreferences msh = getSharedPreferences("Security", Context.MODE_PRIVATE); */
+    /*     SharedPreferences.Editor mshe = msh.edit(); */
+    /*     if (msh.getBoolean("verified",false) && isValid(msh.getString("code",null))) { */
+    /*         verifyInterface.onSuccess(); */
+    /*         return; */
+    /*     } */
+    /*     VerifyDialog dialog = new VerifyDialog(this, this, mshe, verifyInterface); */
+    /*     dialog.show(); */
+    /* } */
 
 }
