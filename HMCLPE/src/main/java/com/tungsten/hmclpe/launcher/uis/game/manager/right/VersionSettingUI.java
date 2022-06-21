@@ -32,7 +32,7 @@ import com.tungsten.filepicker.FolderChooser;
 import com.tungsten.hmclpe.R;
 import com.tungsten.hmclpe.control.ControlPatternActivity;
 import com.tungsten.hmclpe.launcher.MainActivity;
-/* import com.tungsten.hmclpe.launcher.VerifyInterface; */
+import com.tungsten.hmclpe.launcher.VerifyInterface;
 import com.tungsten.hmclpe.launcher.dialogs.control.ControllerManagerDialog;
 import com.tungsten.hmclpe.launcher.list.local.game.GameListBean;
 import com.tungsten.hmclpe.manifest.AppManifest;
@@ -850,8 +850,23 @@ public class VersionSettingUI extends BaseUI implements View.OnClickListener, Co
                 privateGameSetting.notCheckJvm = b;
             }
             if (compoundButton == checkTouchInjector && privateGameSetting != null) {
-				privateGameSetting.touchInjector = b;
-				GsonUtils.savePrivateGameSetting(privateGameSetting, activity.launcherSetting.gameFileDirectory + "/versions/" + versionName + "/hmclpe.cfg");
+                if (b) {
+                    activity.startVerify(new VerifyInterface() {
+                        @Override
+                        public void onSuccess() {
+                            privateGameSetting.touchInjector = true;
+                            GsonUtils.savePrivateGameSetting(privateGameSetting, activity.launcherSetting.gameFileDirectory + "/versions/" + versionName + "/hmclpe.cfg");
+                        }
+
+                        @Override
+                        public void onCancel() {
+                            checkTouchInjector.setChecked(false);
+                        }
+                    });
+                }
+                else {
+                    privateGameSetting.touchInjector = false;
+                }
             }
             GsonUtils.savePrivateGameSetting(privateGameSetting, activity.launcherSetting.gameFileDirectory + "/versions/" + versionName + "/hmclpe.cfg");
         }
