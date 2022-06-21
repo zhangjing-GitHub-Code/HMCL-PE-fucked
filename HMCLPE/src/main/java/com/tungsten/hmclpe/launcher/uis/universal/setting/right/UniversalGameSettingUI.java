@@ -28,7 +28,7 @@ import com.tungsten.filepicker.FolderChooser;
 import com.tungsten.hmclpe.R;
 import com.tungsten.hmclpe.control.ControlPatternActivity;
 import com.tungsten.hmclpe.launcher.MainActivity;
-/* import com.tungsten.hmclpe.launcher.VerifyInterface; */
+import com.tungsten.hmclpe.launcher.VerifyInterface;
 import com.tungsten.hmclpe.launcher.dialogs.control.ControllerManagerDialog;
 import com.tungsten.hmclpe.manifest.AppManifest;
 import com.tungsten.hmclpe.launcher.uis.tools.BaseUI;
@@ -451,8 +451,23 @@ public class UniversalGameSettingUI extends BaseUI implements View.OnClickListen
             activity.privateGameSetting.notCheckJvm = isChecked;
         }
         if (buttonView == checkTouchInjector) {
-            activity.privateGameSetting.touchInjector = true;
-            GsonUtils.savePrivateGameSetting(activity.privateGameSetting, AppManifest.SETTING_DIR + "/private_game_setting.json");
+            if (isChecked) {
+                activity.startVerify(new VerifyInterface() {
+                    @Override
+                    public void onSuccess() {
+                        activity.privateGameSetting.touchInjector = true;
+                        GsonUtils.savePrivateGameSetting(activity.privateGameSetting, AppManifest.SETTING_DIR + "/private_game_setting.json");
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        checkTouchInjector.setChecked(false);
+                    }
+                });
+            }
+            else {
+                activity.privateGameSetting.touchInjector = false;
+            }
         }
         GsonUtils.savePrivateGameSetting(activity.privateGameSetting, AppManifest.SETTING_DIR + "/private_game_setting.json");
     }

@@ -12,7 +12,7 @@ public class TouchInjector {
         if (!gameLaunchSetting.touchInjector) {
             return args;
         }
-        /* MainActivity.verifyFunc(); */
+        MainActivity.verifyFunc();
         Vector<String> newArgs = new Vector<>();
         if (args.contains("Forge") || args.contains("cpw.mods.fml.common.launcher.FMLTweaker") || args.contains("fmlclient") || args.contains("forgeclient")) {
             if (args.contains("cpw.mods.bootstraplauncher.BootstrapLauncher")) {
